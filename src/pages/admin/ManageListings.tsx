@@ -156,7 +156,7 @@ export default function ManageListings() {
           
           if (saveOriginal) {
             try {
-              const originalDataUrl = await resizeImage(file);
+              const originalDataUrl = await resizeImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8, forceJpeg: true });
               newImages.push(originalDataUrl);
             } catch (e) {
               console.error('Failed to resize original:', e);
@@ -166,7 +166,7 @@ export default function ManageListings() {
           console.error('Failed to add watermark:', error);
           // Fallback to original (resized)
           try {
-            const originalDataUrl = await resizeImage(file);
+            const originalDataUrl = await resizeImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8, forceJpeg: true });
             newImages.push(originalDataUrl);
           } catch (e) {
             console.error('Failed to resize fallback:', e);
@@ -174,7 +174,7 @@ export default function ManageListings() {
         }
       } else {
         try {
-          const originalDataUrl = await resizeImage(file);
+          const originalDataUrl = await resizeImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8, forceJpeg: true });
           newImages.push(originalDataUrl);
         } catch (e) {
           console.error('Failed to resize image:', e);

@@ -16,10 +16,15 @@ export default function ManageComplexes() {
     updateComplex(selectedComplex, { [name]: value });
   };
 
-  const handleFloorPlanImageChange = (index: number, value: string) => {
+  const handleFloorPlanImageChange = async (index: number, value: string) => {
     const newFloorPlans = [...data.floorPlans];
     newFloorPlans[index].image = value;
-    updateComplex(selectedComplex, { floorPlans: newFloorPlans });
+    try {
+      await updateComplex(selectedComplex, { floorPlans: newFloorPlans });
+    } catch (error) {
+      console.error('Failed to update complex:', error);
+      alert('데이터베이스 저장에 실패했습니다. 이미지 용량이 너무 클 수 있습니다.');
+    }
   };
 
   const handleFileUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,8 +32,13 @@ export default function ManageComplexes() {
     if (file) {
       try {
         setIsUploading(true);
-        const resizedDataUrl = await resizeImage(file);
-        handleFloorPlanImageChange(index, resizedDataUrl);
+        const resizedDataUrl = await resizeImage(file, {
+          maxWidth: 1000,
+          maxHeight: 1000,
+          quality: 0.7,
+          forceJpeg: true
+        });
+        await handleFloorPlanImageChange(index, resizedDataUrl);
       } catch (error) {
         console.error('Failed to resize image:', error);
         alert('이미지 업로드에 실패했습니다. 다른 이미지를 시도해주세요.');
@@ -115,8 +125,13 @@ export default function ManageComplexes() {
                     if (file) {
                       try {
                         setIsUploading(true);
-                        const resizedDataUrl = await resizeImage(file);
-                        updateComplex(selectedComplex, { image: resizedDataUrl });
+                        const resizedDataUrl = await resizeImage(file, {
+                          maxWidth: 1600,
+                          maxHeight: 1600,
+                          quality: 0.8,
+                          forceJpeg: true
+                        });
+                        await updateComplex(selectedComplex, { image: resizedDataUrl });
                       } catch (error) {
                         console.error('Failed to resize image:', error);
                         alert('이미지 업로드에 실패했습니다. 다른 이미지를 시도해주세요.');

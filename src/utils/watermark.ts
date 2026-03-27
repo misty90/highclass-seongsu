@@ -1,4 +1,12 @@
-export const resizeImage = (file: File): Promise<string> => {
+export const resizeImage = (
+  file: File,
+  options: {
+    maxWidth?: number;
+    maxHeight?: number;
+    quality?: number;
+    forceJpeg?: boolean;
+  } = {}
+): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -11,8 +19,8 @@ export const resizeImage = (file: File): Promise<string> => {
           return;
         }
 
-        const MAX_WIDTH = 1920;
-        const MAX_HEIGHT = 1920;
+        const MAX_WIDTH = options.maxWidth || 1920;
+        const MAX_HEIGHT = options.maxHeight || 1920;
         let width = img.width;
         let height = img.height;
 
@@ -30,10 +38,17 @@ export const resizeImage = (file: File): Promise<string> => {
 
         canvas.width = width;
         canvas.height = height;
+        
+        // Fill with white background in case of transparent PNG converted to JPEG
+        if (options.forceJpeg || file.type !== 'image/png') {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, width, height);
+        }
+        
         ctx.drawImage(img, 0, 0, width, height);
 
-        const type = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-        const quality = type === 'image/jpeg' ? 0.8 : 0.9;
+        const type = options.forceJpeg ? 'image/jpeg' : (file.type === 'image/png' ? 'image/png' : 'image/jpeg');
+        const quality = options.quality ?? (type === 'image/jpeg' ? 0.8 : 0.9);
         
         try {
           const dataUrl = canvas.toDataURL(type, quality);
@@ -73,8 +88,8 @@ export const addWatermark = (
         }
 
         // Max dimensions to prevent memory issues on mobile/prod
-        const MAX_WIDTH = 1920;
-        const MAX_HEIGHT = 1920;
+        const MAX_WIDTH = 1600;
+        const MAX_HEIGHT = 1600;
         let width = img.width;
         let height = img.height;
 
@@ -93,6 +108,10 @@ export const addWatermark = (
         // Set canvas dimensions to scaled dimensions
         canvas.width = width;
         canvas.height = height;
+
+        // Fill with white background in case of transparent PNG converted to JPEG
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
 
         // Draw original image
         ctx.drawImage(img, 0, 0, width, height);
@@ -123,9 +142,9 @@ export const addWatermark = (
         // Draw text in the center
         ctx.fillText(text.toUpperCase(), canvas.width / 2, canvas.height / 2);
 
-        // Convert to data URL (use original type or fallback to jpeg)
-        const type = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-        const quality = type === 'image/jpeg' ? 0.8 : 0.9;
+        // Convert to data URL (force jpeg for compression)
+        const type = 'image/jpeg';
+        const quality = 0.8;
         
         try {
           const dataUrl = canvas.toDataURL(type, quality);

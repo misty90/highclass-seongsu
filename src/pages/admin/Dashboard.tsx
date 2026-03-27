@@ -23,7 +23,12 @@ export default function Dashboard() {
     if (file) {
       try {
         setIsUploading(true);
-        const resizedDataUrl = await resizeImage(file);
+        const resizedDataUrl = await resizeImage(file, {
+          maxWidth: 1600,
+          maxHeight: 1600,
+          quality: 0.8,
+          forceJpeg: true
+        });
         setSeoForm({ ...seoForm, heroImage: resizedDataUrl });
       } catch (error) {
         console.error('Failed to resize hero image:', error);
@@ -39,8 +44,13 @@ export default function Dashboard() {
     if (file) {
       try {
         setIsUploading(true);
-        const resizedDataUrl = await resizeImage(file);
-        updateComplex(complexId, { image: resizedDataUrl });
+        const resizedDataUrl = await resizeImage(file, {
+          maxWidth: 800,
+          maxHeight: 800,
+          quality: 0.8,
+          forceJpeg: true
+        });
+        await updateComplex(complexId, { image: resizedDataUrl });
       } catch (error) {
         console.error('Failed to resize complex image:', error);
         alert('이미지 업로드에 실패했습니다.');
