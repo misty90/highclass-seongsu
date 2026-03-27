@@ -1,11 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { Save, Image as ImageIcon, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
+import { resizeImage } from '../../utils/watermark';
 
 export default function ManageComplexes() {
   const complexes = useStore((state) => state.complexes);
   const updateComplex = useStore((state) => state.updateComplex);
   const [selectedComplex, setSelectedComplex] = useState<string>('galleria');
+  const [isUploading, setIsUploading] = useState(false);
   
   const data = complexes[selectedComplex];
 
@@ -20,14 +22,19 @@ export default function ManageComplexes() {
     updateComplex(selectedComplex, { floorPlans: newFloorPlans });
   };
 
-  const handleFileUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        handleFloorPlanImageChange(index, reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        setIsUploading(true);
+        const resizedDataUrl = await resizeImage(file);
+        handleFloorPlanImageChange(index, resizedDataUrl);
+      } catch (error) {
+        console.error('Failed to resize image:', error);
+        alert('이미지 업로드에 실패했습니다. 다른 이미지를 시도해주세요.');
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -97,19 +104,25 @@ export default function ManageComplexes() {
               />
               <label className="cursor-pointer bg-white border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Upload className="w-4 h-4" />
-                파일 첨부
+                {isUploading ? '업로드 중...' : '파일 첨부'}
                 <input
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => {
+                  disabled={isUploading}
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        updateComplex(selectedComplex, { image: reader.result as string });
-                      };
-                      reader.readAsDataURL(file);
+                      try {
+                        setIsUploading(true);
+                        const resizedDataUrl = await resizeImage(file);
+                        updateComplex(selectedComplex, { image: resizedDataUrl });
+                      } catch (error) {
+                        console.error('Failed to resize image:', error);
+                        alert('이미지 업로드에 실패했습니다. 다른 이미지를 시도해주세요.');
+                      } finally {
+                        setIsUploading(false);
+                      }
                     }
                   }}
                 />
@@ -140,11 +153,12 @@ export default function ManageComplexes() {
                       />
                       <label className="cursor-pointer bg-white border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 flex items-center gap-2 text-sm font-medium text-gray-700">
                         <Upload className="w-4 h-4" />
-                        파일 첨부
+                        {isUploading ? '업로드 중...' : '파일 첨부'}
                         <input
                           type="file"
                           accept="image/*"
                           className="hidden"
+                          disabled={isUploading}
                           onChange={(e) => handleFileUpload(idx, e)}
                         />
                       </label>

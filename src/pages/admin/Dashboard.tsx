@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Building2, Settings, FileText, Image as ImageIcon, Upload } from 'lucide-react';
+import { resizeImage } from '../../utils/watermark';
 
 export default function Dashboard() {
   const { listings, settings, updateSettings, complexes, updateComplex } = useStore();
@@ -9,6 +10,7 @@ export default function Dashboard() {
     ...settings,
     heroImage: settings.heroImage || ''
   });
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleSaveSeo = (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,25 +18,35 @@ export default function Dashboard() {
     alert('설정이 저장되었습니다.');
   };
 
-  const handleHeroImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSeoForm({ ...seoForm, heroImage: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      try {
+        setIsUploading(true);
+        const resizedDataUrl = await resizeImage(file);
+        setSeoForm({ ...seoForm, heroImage: resizedDataUrl });
+      } catch (error) {
+        console.error('Failed to resize hero image:', error);
+        alert('이미지 업로드에 실패했습니다.');
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
-  const handleComplexImageUpload = (complexId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleComplexImageUpload = async (complexId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateComplex(complexId, { image: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      try {
+        setIsUploading(true);
+        const resizedDataUrl = await resizeImage(file);
+        updateComplex(complexId, { image: resizedDataUrl });
+      } catch (error) {
+        console.error('Failed to resize complex image:', error);
+        alert('이미지 업로드에 실패했습니다.');
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -102,7 +114,7 @@ export default function Dashboard() {
                   <div className="space-y-1 text-center">
                     {seoForm.heroImage ? (
                       <div className="mb-4">
-                        <img src={seoForm.heroImage} alt="Hero Preview" className="max-h-48 mx-auto rounded-sm object-cover" />
+                        <img src={seoForm.heroImage} alt="Hero Preview" className="max-h-48 mx-auto rounded-sm object-cover" referrerPolicy="no-referrer" />
                       </div>
                     ) : (
                       <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
@@ -110,10 +122,10 @@ export default function Dashboard() {
                     <div className="flex text-sm text-gray-600 justify-center">
                       <label
                         htmlFor="hero-image-upload"
-                        className="relative cursor-pointer bg-white rounded-md font-medium text-[#0F1A2B] hover:text-[#1a2b44] focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#0F1A2B]"
+                        className={`relative cursor-pointer bg-white rounded-md font-medium ${isUploading ? 'text-gray-400' : 'text-[#0F1A2B] hover:text-[#1a2b44]'} focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#0F1A2B]`}
                       >
-                        <span>이미지 업로드</span>
-                        <input id="hero-image-upload" name="hero-image-upload" type="file" className="sr-only" accept="image/*" onChange={handleHeroImageUpload} />
+                        <span>{isUploading ? '업로드 중...' : '이미지 업로드'}</span>
+                        <input id="hero-image-upload" name="hero-image-upload" type="file" className="sr-only" accept="image/*" disabled={isUploading} onChange={handleHeroImageUpload} />
                       </label>
                       <p className="pl-1">또는 드래그 앤 드롭</p>
                     </div>
@@ -121,8 +133,9 @@ export default function Dashboard() {
                   </div>
                   <input 
                     type="file" 
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                    className={`absolute inset-0 w-full h-full opacity-0 ${isUploading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                     accept="image/*" 
+                    disabled={isUploading}
                     onChange={handleHeroImageUpload} 
                   />
                 </div>
@@ -136,19 +149,20 @@ export default function Dashboard() {
                       <p className="text-sm font-medium text-gray-900">{complex.name}</p>
                       <div className="relative aspect-[3/4] rounded-md overflow-hidden border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors group">
                         {complex.image ? (
-                          <img src={complex.image} alt={complex.name} className="w-full h-full object-cover" />
+                          <img src={complex.image} alt={complex.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-gray-50">
                             <ImageIcon className="w-8 h-8 text-gray-400" />
                           </div>
                         )}
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <label className="cursor-pointer bg-white text-gray-900 px-4 py-2 rounded-sm text-sm font-medium hover:bg-gray-100 transition-colors">
-                            이미지 변경
+                          <label className={`cursor-pointer bg-white text-gray-900 px-4 py-2 rounded-sm text-sm font-medium ${isUploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'} transition-colors`}>
+                            {isUploading ? '업로드 중...' : '이미지 변경'}
                             <input 
                               type="file" 
                               className="hidden" 
                               accept="image/*" 
+                              disabled={isUploading}
                               onChange={(e) => handleComplexImageUpload(complex.id, e)} 
                             />
                           </label>

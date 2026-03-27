@@ -103,6 +103,7 @@ export default function Home() {
                       src={complex.image}
                       alt={complex.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-500" />
                   </div>
