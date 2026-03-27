@@ -190,7 +190,7 @@ export const initFirebaseListeners = () => {
   // Fallback timeout to prevent infinite loading if Firebase is blocked or slow
   setTimeout(() => {
     useStore.setState({ isInitialized: true });
-  }, 3000);
+  }, 1500);
 
   import('../firebase').then(({ auth, onAuthStateChanged }) => {
     onAuthStateChanged(auth, (user) => {
