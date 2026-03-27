@@ -16,14 +16,61 @@ export default function ManageComplexes() {
     updateComplex(selectedComplex, { [name]: value });
   };
 
+  // Helper to safely convert base64 to File
+  const dataURLtoFile = (dataurl: string, filename: string) => {
+    const arr = dataurl.split(',');
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
   const handleFloorPlanImageChange = async (index: number, value: string) => {
-    const newFloorPlans = [...data.floorPlans];
-    newFloorPlans[index].image = value;
     try {
+      // Create a copy of the floor plans
+      const newFloorPlans = [...data.floorPlans];
+      newFloorPlans[index].image = value;
+      
+      // Auto-compress any existing large images to prevent 1MB limit
+      let needsOptimization = false;
+      for (let i = 0; i < newFloorPlans.length; i++) {
+        const plan = newFloorPlans[i];
+        // If it's a base64 image and it's larger than ~60KB (approx 80,000 chars in base64)
+        // Trimage has 11 floor plans, so 11 * 80KB = 880KB, keeping it safely under 1MB
+        if (plan.image && plan.image.startsWith('data:image') && plan.image.length > 80000) {
+          try {
+            const file = dataURLtoFile(plan.image, 'image.jpg');
+            
+            const resizedDataUrl = await resizeImage(file, {
+              maxWidth: 500,
+              maxHeight: 500,
+              quality: 0.4,
+              forceJpeg: true
+            });
+            
+            if (resizedDataUrl.length < plan.image.length) {
+              newFloorPlans[i].image = resizedDataUrl;
+              needsOptimization = true;
+            }
+          } catch (e) {
+            console.error('Failed to auto-compress image at index', i, e);
+          }
+        }
+      }
+
       await updateComplex(selectedComplex, { floorPlans: newFloorPlans });
+      
+      if (needsOptimization) {
+        console.log('Automatically optimized existing large images to save space.');
+      }
     } catch (error) {
       console.error('Failed to update complex:', error);
-      alert('데이터베이스 저장에 실패했습니다. 이미지 용량이 너무 클 수 있습니다.');
+      alert('데이터베이스 저장에 실패했습니다. 이미지 용량이 너무 클 수 있습니다. 기존 이미지 일괄 압축 버튼을 먼저 눌러주세요.');
     }
   };
 
@@ -32,10 +79,12 @@ export default function ManageComplexes() {
     if (file) {
       try {
         setIsUploading(true);
+        // Extremely aggressive compression for floor plans to avoid Firestore 1MB document limit
+        // Trimage has 11 floor plans + 1 hero image, all stored in one document
         const resizedDataUrl = await resizeImage(file, {
-          maxWidth: 1000,
-          maxHeight: 1000,
-          quality: 0.7,
+          maxWidth: 500,
+          maxHeight: 500,
+          quality: 0.4,
           forceJpeg: true
         });
         await handleFloorPlanImageChange(index, resizedDataUrl);
@@ -125,10 +174,11 @@ export default function ManageComplexes() {
                     if (file) {
                       try {
                         setIsUploading(true);
+                        // Compress hero image to avoid 1MB document limit
                         const resizedDataUrl = await resizeImage(file, {
-                          maxWidth: 1600,
-                          maxHeight: 1600,
-                          quality: 0.8,
+                          maxWidth: 1200,
+                          maxHeight: 1200,
+                          quality: 0.7,
                           forceJpeg: true
                         });
                         await updateComplex(selectedComplex, { image: resizedDataUrl });
@@ -151,8 +201,59 @@ export default function ManageComplexes() {
           </div>
 
           <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">평면도 이미지 관리</h3>
-            <p className="text-sm text-gray-500 mb-4">이미지 URL을 입력하거나 파일을 직접 업로드하세요.</p>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">평면도 이미지 관리</h3>
+                <p className="text-sm text-gray-500 mt-1">이미지 URL을 입력하거나 파일을 직접 업로드하세요.</p>
+              </div>
+              <button
+                onClick={async () => {
+                  if (!confirm('기존에 업로드된 평면도 이미지들의 용량을 일괄적으로 줄이시겠습니까? (저장 오류 해결용)')) return;
+                  
+                  setIsUploading(true);
+                  try {
+                    const newFloorPlans = [...data.floorPlans];
+                    let optimizedCount = 0;
+                    
+                    for (let i = 0; i < newFloorPlans.length; i++) {
+                      const plan = newFloorPlans[i];
+                      if (plan.image && plan.image.startsWith('data:image') && plan.image.length > 80000) {
+                        // Convert base64 back to file to resize
+                        const file = dataURLtoFile(plan.image, 'image.jpg');
+                        
+                        const resizedDataUrl = await resizeImage(file, {
+                          maxWidth: 500,
+                          maxHeight: 500,
+                          quality: 0.4,
+                          forceJpeg: true
+                        });
+                        
+                        if (resizedDataUrl.length < plan.image.length) {
+                          newFloorPlans[i].image = resizedDataUrl;
+                          optimizedCount++;
+                        }
+                      }
+                    }
+                    
+                    if (optimizedCount > 0) {
+                      await updateComplex(selectedComplex, { floorPlans: newFloorPlans });
+                      alert(`${optimizedCount}개의 이미지가 성공적으로 압축되었습니다. 이제 나머지 이미지를 업로드해보세요.`);
+                    } else {
+                      alert('압축할 이미지가 없거나 이미 최적화되어 있습니다.');
+                    }
+                  } catch (error) {
+                    console.error('Failed to optimize images:', error);
+                    alert('이미지 압축 중 오류가 발생했습니다.');
+                  } finally {
+                    setIsUploading(false);
+                  }
+                }}
+                disabled={isUploading}
+                className="px-4 py-2 bg-[#0F1A2B] text-white rounded-md hover:bg-[#1a2b44] text-sm font-medium disabled:opacity-50"
+              >
+                {isUploading ? '압축 중...' : '기존 이미지 일괄 압축'}
+              </button>
+            </div>
             <div className="space-y-4">
               {data.floorPlans.map((plan, idx) => (
                 <div key={idx} className="flex items-center gap-4 bg-gray-50 p-4 rounded-md">
@@ -177,6 +278,14 @@ export default function ManageComplexes() {
                           onChange={(e) => handleFileUpload(idx, e)}
                         />
                       </label>
+                      {plan.image && (
+                        <button
+                          onClick={() => handleFloorPlanImageChange(idx, '')}
+                          className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-md hover:bg-red-100 text-sm font-medium"
+                        >
+                          삭제
+                        </button>
+                      )}
                     </div>
                     {plan.image && (
                       <div className="mt-2">
