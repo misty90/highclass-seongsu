@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "Listing": {
+      "title": "Listing",
+      "description": "A real estate listing",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "complex": { "type": "string" },
+        "type": { "type": "string" },
+        "size": { "type": "string" },
+        "price": { "type": "string" },
+        "address": { "type": "string" },
+        "approvalDate": { "type": "string" },
+        "purpose": { "type": "string" },
+        "parking": { "type": "string" },
+        "floor": { "type": "string" },
+        "dong": { "type": "string" },
+        "area": { "type": "string" },
+        "roomsBaths": { "type": "string" },
+        "maintenanceFee": { "type": "string" },
+        "direction": { "type": "string" },
+        "moveInDate": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "thumbnail": { "type": "string" },
+        "isPublic": { "type": "boolean" },
+        "isRecommended": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["title", "complex", "type", "size", "price", "createdAt"]
+    },
+    "ComplexData": {
+      "title": "ComplexData",
+      "description": "Data about a specific apartment complex",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "image": { "type": "string" },
+        "floorPlans": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "image": { "type": "string" }
+            }
+          }
+        },
+        "community": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name", "title", "desc", "image"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Global application settings",
+      "type": "object",
+      "properties": {
+        "heroImage": { "type": "string" },
+        "seoTitle": { "type": "string" },
+        "seoDescription": { "type": "string" },
+        "snsLinks": {
+          "type": "object",
+          "properties": {
+            "instagram": { "type": "string" },
+            "blog": { "type": "string" },
+            "youtube": { "type": "string" },
+            "tiktok": { "type": "string" },
+            "homepage": { "type": "string" }
+          }
+        }
+      },
+      "required": ["heroImage", "seoTitle", "seoDescription"]
+    }
+  },
+  "firestore": {
+    "/listings/{listingId}": {
+      "schema": { "$ref": "#/entities/Listing" },
+      "description": "Collection of all real estate listings"
+    },
+    "/complexes/{complexId}": {
+      "schema": { "$ref": "#/entities/ComplexData" },
+      "description": "Collection of apartment complexes data"
+    },
+    "/settings/global": {
+      "schema": { "$ref": "#/entities/Settings" },
+      "description": "Singleton document for global settings"
+    }
+  }
+}

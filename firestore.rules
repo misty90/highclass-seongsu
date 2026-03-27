@@ -1,0 +1,122 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: listings
+    // Document ID: auto-generated
+    // Fields:
+    //   - title: string
+    //   - complex: string
+    //   - type: string
+    //   - size: string
+    //   - price: string
+    //   - address: string
+    //   - approvalDate: string
+    //   - purpose: string
+    //   - parking: string
+    //   - floor: string
+    //   - dong: string
+    //   - area: string
+    //   - roomsBaths: string
+    //   - maintenanceFee: string
+    //   - direction: string
+    //   - moveInDate: string
+    //   - images: list of strings
+    //   - thumbnail: string
+    //   - isPublic: boolean
+    //   - isRecommended: boolean
+    //   - createdAt: number
+    //
+    // Collection: complexes
+    // Document ID: string (e.g., 'galleria', 'acro', 'trimage')
+    // Fields:
+    //   - name: string
+    //   - title: string
+    //   - desc: string
+    //   - image: string
+    //   - floorPlans: list of objects { name: string, image: string }
+    //   - community: list of strings
+    //
+    // Collection: settings
+    // Document ID: 'global'
+    // Fields:
+    //   - heroImage: string
+    //   - seoTitle: string
+    //   - seoDescription: string
+    //   - snsLinks: map { instagram, blog, youtube, tiktok, homepage }
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isMasterAdmin() {
+      return isAuthenticated() && 
+        request.auth.token.email == "soinvu.com@gmail.com" && 
+        request.auth.token.email_verified == true;
+    }
+
+    function isGeneralAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/admins/$(request.auth.token.email.replace('[^a-zA-Z0-9]', '')));
+    }
+
+    function isAdmin() {
+      return isMasterAdmin() || isGeneralAdmin();
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /admins/{adminId} {
+      // Anyone can read admins to check their status
+      allow read: if true;
+      
+      // Only Master Admin can manage other admins
+      allow create: if isMasterAdmin();
+      allow update: if isMasterAdmin();
+      allow delete: if isMasterAdmin();
+    }
+
+    match /listings/{listingId} {
+      // Anyone can read public listings
+      allow read: if resource == null || resource.data.isPublic == true || isAdmin();
+      
+      // Only admin can create, update, delete
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /complexes/{complexId} {
+      // Anyone can read complexes
+      allow read: if true;
+      
+      // Only admin can create, update, delete
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      // Anyone can read settings
+      allow read: if true;
+      
+      // Only admin can create, update, delete
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}
