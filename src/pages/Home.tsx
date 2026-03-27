@@ -36,11 +36,13 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img
-            src={settings.heroImage || "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"}
-            alt="Hero Background"
-            className="w-full h-full object-cover"
-          />
+          {settings.heroImage && (
+            <img
+              src={settings.heroImage}
+              alt="Hero Background"
+              className="w-full h-full object-cover"
+            />
+          )}
           <div className="absolute inset-0 bg-[#0F1A2B]/40 mix-blend-multiply" />
         </div>
         

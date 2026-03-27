@@ -16,7 +16,6 @@ import Login from './pages/admin/Login';
 import Dashboard from './pages/admin/Dashboard';
 import ManageListings from './pages/admin/ManageListings';
 import ManageComplexes from './pages/admin/ManageComplexes';
-import ManageAdmins from './pages/admin/ManageAdmins';
 import { useStore, initFirebaseListeners } from './store/useStore';
 import { Navigate } from 'react-router-dom';
 
@@ -56,7 +55,6 @@ export default function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="listings" element={<ManageListings />} />
             <Route path="complexes" element={<ManageComplexes />} />
-            <Route path="accounts" element={<ManageAdmins />} />
           </Route>
         </Route>
       </Routes>

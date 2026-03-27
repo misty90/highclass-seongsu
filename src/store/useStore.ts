@@ -117,7 +117,7 @@ const initialComplexes: Record<string, ComplexData> = {
 };
 
 const defaultSettings = {
-  heroImage: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80',
+  heroImage: '',
   seoTitle: '하이클래스 부동산 | 갤러리아포레 단독입점',
   seoDescription: '갤러리아포레, 아크로서울포레스트, 트리마제 전문 하이클래스 부동산입니다. 엄선된 프리미엄 매물만 제공합니다.',
   snsLinks: {
