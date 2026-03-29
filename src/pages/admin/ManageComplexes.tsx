@@ -36,12 +36,64 @@ export default function ManageComplexes() {
       const newFloorPlans = [...data.floorPlans];
       newFloorPlans[index].image = value;
       
-      // Auto-compress any existing large images to prevent 1MB limit
+      // Calculate total approximate size of all images in this complex
+      let totalSize = (data.heroImage?.length || 0) + newFloorPlans.reduce((acc, p) => acc + (p.image?.length || 0), 0);
       let needsOptimization = false;
+      let newHeroImage = data.heroImage;
+
+      // If total size is dangerously close to 1MB (e.g., > 700KB), compress EVERYTHING aggressively
+      if (totalSize > 700000) {
+        console.log(`Total size ${totalSize} exceeds 700KB. Triggering emergency compression...`);
+        
+        // 1. Compress all floor plans aggressively (> 20KB)
+        for (let i = 0; i < newFloorPlans.length; i++) {
+          const plan = newFloorPlans[i];
+          if (plan.image && plan.image.startsWith('data:image') && plan.image.length > 20000) {
+            try {
+              const file = dataURLtoFile(plan.image, 'image.jpg');
+              const resizedDataUrl = await resizeImage(file, {
+                maxWidth: 400,
+                maxHeight: 400,
+                quality: 0.3,
+                forceJpeg: true
+              });
+              if (resizedDataUrl.length < plan.image.length) {
+                newFloorPlans[i].image = resizedDataUrl;
+                needsOptimization = true;
+              }
+            } catch (e) {
+              console.error('Failed to emergency-compress image at index', i, e);
+            }
+          }
+        }
+        
+        // 2. Compress hero image if it's large (> 100KB)
+        if (newHeroImage && newHeroImage.startsWith('data:image') && newHeroImage.length > 100000) {
+           try {
+              const file = dataURLtoFile(newHeroImage, 'hero.jpg');
+              const resizedHero = await resizeImage(file, {
+                maxWidth: 800,
+                maxHeight: 800,
+                quality: 0.5,
+                forceJpeg: true
+              });
+              if (resizedHero.length < newHeroImage.length) {
+                newHeroImage = resizedHero;
+                needsOptimization = true;
+              }
+           } catch (e) {
+              console.error('Failed to emergency-compress hero image', e);
+           }
+        }
+        
+        await updateComplex(selectedComplex, { floorPlans: newFloorPlans, heroImage: newHeroImage });
+        return; // Exit early since we already updated
+      }
+
+      // Normal auto-compress for extremely large individual images
       for (let i = 0; i < newFloorPlans.length; i++) {
         const plan = newFloorPlans[i];
         // If it's a base64 image and it's larger than ~60KB (approx 80,000 chars in base64)
-        // Trimage has 11 floor plans, so 11 * 80KB = 880KB, keeping it safely under 1MB
         if (plan.image && plan.image.startsWith('data:image') && plan.image.length > 80000) {
           try {
             const file = dataURLtoFile(plan.image, 'image.jpg');
@@ -208,17 +260,18 @@ export default function ManageComplexes() {
               </div>
               <button
                 onClick={async () => {
-                  if (!confirm('기존에 업로드된 평면도 이미지들의 용량을 일괄적으로 줄이시겠습니까? (저장 오류 해결용)')) return;
+                  if (!confirm('기존에 업로드된 평면도 및 대표 이미지의 용량을 일괄적으로 줄이시겠습니까? (저장 오류 해결용)')) return;
                   
                   setIsUploading(true);
                   try {
                     const newFloorPlans = [...data.floorPlans];
                     let optimizedCount = 0;
+                    let newHeroImage = data.heroImage;
                     
+                    // Compress floor plans
                     for (let i = 0; i < newFloorPlans.length; i++) {
                       const plan = newFloorPlans[i];
-                      if (plan.image && plan.image.startsWith('data:image') && plan.image.length > 80000) {
-                        // Convert base64 back to file to resize
+                      if (plan.image && plan.image.startsWith('data:image') && plan.image.length > 50000) {
                         const file = dataURLtoFile(plan.image, 'image.jpg');
                         
                         const resizedDataUrl = await resizeImage(file, {
@@ -235,8 +288,23 @@ export default function ManageComplexes() {
                       }
                     }
                     
+                    // Compress hero image
+                    if (newHeroImage && newHeroImage.startsWith('data:image') && newHeroImage.length > 200000) {
+                      const file = dataURLtoFile(newHeroImage, 'hero.jpg');
+                      const resizedHero = await resizeImage(file, {
+                        maxWidth: 1000,
+                        maxHeight: 1000,
+                        quality: 0.6,
+                        forceJpeg: true
+                      });
+                      if (resizedHero.length < newHeroImage.length) {
+                        newHeroImage = resizedHero;
+                        optimizedCount++;
+                      }
+                    }
+                    
                     if (optimizedCount > 0) {
-                      await updateComplex(selectedComplex, { floorPlans: newFloorPlans });
+                      await updateComplex(selectedComplex, { floorPlans: newFloorPlans, heroImage: newHeroImage });
                       alert(`${optimizedCount}개의 이미지가 성공적으로 압축되었습니다. 이제 나머지 이미지를 업로드해보세요.`);
                     } else {
                       alert('압축할 이미지가 없거나 이미 최적화되어 있습니다.');
