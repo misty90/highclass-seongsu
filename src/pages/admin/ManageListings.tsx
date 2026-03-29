@@ -484,6 +484,17 @@ export default function ManageListings() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-sm focus:ring-[#0F1A2B] focus:border-[#0F1A2B] resize-y"
                   />
                 </div>
+
+                <div className="md:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">유튜브 영상 URL (선택)</label>
+                  <input
+                    type="text"
+                    value={formData.youtubeUrl || ''}
+                    onChange={(e) => setFormData({...formData, youtubeUrl: e.target.value})}
+                    placeholder="예: https://www.youtube.com/watch?v=..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-sm focus:ring-[#0F1A2B] focus:border-[#0F1A2B]"
+                  />
+                </div>
               </div>
 
               {/* Images */}

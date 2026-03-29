@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { motion } from 'framer-motion';
-import { Phone, MessageCircle, ArrowLeft, Building2, Maximize, Calendar, MapPin, Compass, Car, Info, X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Phone, MessageCircle, ArrowLeft, Building2, Maximize, Calendar, MapPin, Compass, Car, Info, X, ZoomIn, ChevronLeft, ChevronRight, Youtube } from 'lucide-react';
 
 export default function ListingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -10,6 +10,12 @@ export default function ListingDetail() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
   const listing = listings.find(l => l.id === id);
+
+  const getYouTubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
 
   const complexKey = Object.keys(complexes).find(k => complexes[k].name === listing?.complex);
   const complexData = complexKey ? complexes[complexKey] : null;
@@ -181,6 +187,30 @@ export default function ListingDetail() {
                       {listing.agentBriefing}
                     </p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* YouTube Video */}
+            {listing.youtubeUrl && getYouTubeId(listing.youtubeUrl) && (
+              <div className="mb-12">
+                <div className="flex items-center mb-6">
+                  <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mr-4">
+                    <Youtube className="w-5 h-5 text-red-600" />
+                  </div>
+                  <h2 className="font-serif text-2xl font-bold text-[#0F1A2B]">
+                    내부 영상
+                  </h2>
+                </div>
+                <div className="relative w-full overflow-hidden rounded-lg shadow-md bg-gray-100" style={{ paddingTop: '56.25%' }}>
+                  <iframe
+                    className="absolute top-0 left-0 w-full h-full"
+                    src={`https://www.youtube.com/embed/${getYouTubeId(listing.youtubeUrl)}`}
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  ></iframe>
                 </div>
               </div>
             )}

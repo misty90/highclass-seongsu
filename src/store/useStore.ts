@@ -28,6 +28,7 @@ export interface Listing {
   isPublic: boolean;
   isRecommended: boolean;
   agentBriefing?: string;
+  youtubeUrl?: string;
   createdAt: number;
 }
 
