@@ -160,6 +160,31 @@ export default function ListingDetail() {
               </div>
             )}
 
+            {/* Agent Briefing */}
+            {listing.agentBriefing && (
+              <div className="mb-12 bg-gradient-to-br from-[#0F1A2B] to-[#1a2b44] rounded-lg p-8 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#C5A880]/10 rounded-full -ml-12 -mb-12 blur-xl"></div>
+                
+                <div className="relative z-10">
+                  <div className="flex items-center mb-6">
+                    <div className="w-10 h-10 bg-[#C5A880]/20 rounded-full flex items-center justify-center mr-4">
+                      <Info className="w-5 h-5 text-[#C5A880]" />
+                    </div>
+                    <h2 className="font-serif text-2xl font-bold text-white tracking-wide">
+                      담당자 브리핑
+                    </h2>
+                  </div>
+                  
+                  <div className="bg-white/5 backdrop-blur-sm rounded-md p-6 border border-white/10">
+                    <p className="text-gray-200 leading-relaxed whitespace-pre-wrap font-light text-lg">
+                      {listing.agentBriefing}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Detailed Table */}
             <div>
               <h2 className="font-serif text-2xl font-bold text-[#0F1A2B] mb-6 border-b border-gray-200 pb-4">매물 상세 정보</h2>

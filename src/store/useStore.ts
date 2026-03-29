@@ -27,6 +27,7 @@ export interface Listing {
   thumbnail: string;
   isPublic: boolean;
   isRecommended: boolean;
+  agentBriefing?: string;
   createdAt: number;
 }
 

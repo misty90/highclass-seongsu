@@ -473,6 +473,17 @@ export default function ManageListings() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-sm focus:ring-[#0F1A2B] focus:border-[#0F1A2B] resize-none"
                   />
                 </div>
+
+                <div className="md:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">담당자 브리핑</label>
+                  <textarea
+                    rows={4}
+                    value={formData.agentBriefing || ''}
+                    onChange={(e) => setFormData({...formData, agentBriefing: e.target.value})}
+                    placeholder="매물에 대한 상세한 브리핑 내용을 입력하세요."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-sm focus:ring-[#0F1A2B] focus:border-[#0F1A2B] resize-y"
+                  />
+                </div>
               </div>
 
               {/* Images */}
